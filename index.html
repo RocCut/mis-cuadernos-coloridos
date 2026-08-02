@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mis Cuadernos Coloridos 📔</title>
+
+<!-- NUEVO: PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ffd6e8">
+<link rel="apple-touch-icon" href="icon-192.png">
+
+<style>
+  :root {
+    --rosa: #ffd6e8;
+    --rosa-oscuro: #ffc2e0;
+    --lila: #e9d5ff;
+    --texto: #8a4f7d;
+  }
+
+    * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+  body {
+    background: linear-gradient(135deg, var(--rosa), var(--lila));
+    margin:0; padding:20px; min-height:100vh; color:var(--texto);
+  }
+.contenedor { max-width: 1100px; margin: 0 auto; }
+  h1 { text-align: center; color: var(--texto); font-size: 2.2rem; }
+
+  .btn {
+    background: white; border: none; padding: 12px 22px; border-radius: 25px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1); cursor: pointer; font-weight: 600;
+    transition: 0.2s; color: var(--texto); font-size: 1rem; margin-right: 8px;
+  }
+  .btn:hover { transform: translateY(-2px); }
+  .btn-peligro { background: #ffccd5; }
+
+  /* PANTALLAS */
+.pantalla { display: none; }
+.pantalla.activa { display: block; }
+
+  /* ESTANTERÍA */
+.grid-cuadernos {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 30px; margin-top: 30px;
+  }
+.cuaderno {
+    width: 100%; height: 250px; position: relative;
+    transition: 0.4s;
+  }
+.cuaderno:hover { transform: rotateY(-10deg) translateY(-10px); }
+.portada {
+    position: absolute; width: 100%; height: 100%;
+    background: white; border-radius: 5px 15px 15px 5px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    padding: 15px; display: flex; flex-direction: column; justify-content: space-between;
+    border-left: 8px solid var(--color-lomo, #ffc2e0);
+  }
+.portada::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(transparent, transparent 27px, var(--color-lineas, #ffd6e8) 28px);
+    border-radius: 5px 15px 15px 5px; opacity: 0.2; pointer-events: none;
+  }
+.portada-info { cursor: pointer; flex-grow: 1; display: flex; flex-direction: column; justify-content: center; z-index: 2; }
+.titulo { font-weight: bold; font-size: 1.1rem; text-align: center; }
+.fecha { text-align: center; font-size: 0.75rem; opacity: 0.6; margin-top: 8px; }
+.portada-botones { display: flex; gap: 8px; z-index: 2; }
+.btn-portada { flex: 1; padding: 6px; font-size: 0.75rem; border-radius: 12px; border:none; cursor:pointer; }
+
+  /* DENTRO DEL CUADERNO */
+.encabezado-cuaderno { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
+.lista-notas { display: flex; flex-direction: column; gap: 12px; }
+.nota {
+    background: white; padding: 15px; border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08); border-left: 5px solid var(--color-lomo, #ffc2e0);
+    cursor: pointer; position: relative; transition: 0.2s;
+  }
+.nota:hover { transform: translateX(5px); }
+.nota-titulo { font-weight: bold; margin-bottom: 5px; padding-right: 60px; }
+.nota-texto { font-size: 0.9rem; opacity: 0.8; white-space: pre-wrap; margin-bottom: 8px; }
+.btn-nota-del {
+    position: absolute; top: 10px; right: 10px; background: #ffccd5;
+    border: none; border-radius: 10px; padding: 5px 8px; font-size: 0.7rem; cursor: pointer;
+  }
+  
+  /* TAGS NUEVOS */
+.tags-contenedor { display: flex; gap: 6px; flex-wrap: wrap; }
+.tag {
+    background: var(--color-lomo, #ffd6e8); 
+    color: var(--texto);
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  /* SELECTOR DE COLORES */
+.colores {
+    display: flex; gap: 10px; margin: 15px 0; flex-wrap: wrap;
+  }
+.color-opcion {
+    width: 35px; height: 35px; border-radius: 50%; cursor: pointer;
+    border: 3px solid transparent; transition: 0.2s;
+  }
+.color-opcion.seleccionado { border-color: var(--texto); transform: scale(1.1); }
+
+  /* MODAL */
+.modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%;
+    background: rgba(0,0,0,0.4); align-items: center; justify-content: center; z-index: 10; }
+.modal.activo { display: flex; }
+.modal-box {
+    background: white; padding: 25px; border-radius: 25px; width: 90%; max-width: 400px;
+  }
+  #nombreInput, #notaTituloInput, #notaTextoInput, #notaTagsInput { 
+    width: 100%; padding: 12px; border-radius: 15px; border: 2px solid #eee; margin: 10px 0; 
+  }
+  #notaTextoInput { height: 120px; resize: vertical; }
+  .modal-botones { display: flex; gap: 10px; justify-content: space-between; }
+  .ayuda { font-size: 0.8rem; opacity: 0.7; margin-top: -5px; }
+</style>
+</head>
+<body>
+
+<!-- PANTALLA 1: ESTANTERÍA -->
+<div class="pantalla activa" id="pantallaEstanteria">
+  <div class="contenedor">
+    <h1>📚 Mis Cuadernos 📔</h1>
+    <button class="btn" onclick="ui.abrirModalNuevoCuaderno()">+ Nuevo Cuaderno</button>
+    <div class="grid-cuadernos" id="listaCuadernos"></div>
+  </div>
+</div>
+
+<!-- PANTALLA 2: DENTRO DEL CUADERNO -->
+<div class="pantalla" id="pantallaNotas">
+  <div class="contenedor">
+    <div class="encabezado-cuaderno">
+      <button class="btn" onclick="nav.volverAEstanteria()">← Volver</button>
+      <h1 id="tituloCuadernoAbierto"></h1>
+      <button class="btn" onclick="nota.abrirModalNueva()">+ Nueva Nota</button>
+    </div>
+    <div class="lista-notas" id="listaNotas"></div>
+  </div>
+</div>
+
+<!-- MODAL CUADERNO -->
+<div class="modal" id="modalCuaderno">
+  <div class="modal-box">
+    <h3 id="tituloModalCuaderno">Nuevo Cuaderno</h3>
+    <input type="text" id="nombreInput" placeholder="Nombre del cuaderno...">
+    <label>Elige un color:</label>
+    <div class="colores" id="selectorColores"></div>
+    <div class="modal-botones">
+      <button class="btn btn-peligro" id="btnEliminarCuaderno" style="display:none;" onclick="cuaderno.eliminar()">Eliminar Cuaderno</button>
+      <div>
+        <button class="btn" onclick="cuaderno.guardar()">Guardar</button>
+        <button class="btn" onclick="ui.cerrarModalCuaderno()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NOTA - SOLO LE AGREGUÉ EL INPUT DE TAGS -->
+<div class="modal" id="modalNota">
+  <div class="modal-box">
+    <h3 id="tituloModalNota">Nueva Nota</h3>
+    <input type="text" id="notaTituloInput" placeholder="Título de la nota">
+    <textarea id="notaTextoInput" placeholder="Escribe tu nota aquí..."></textarea>
+    
+    <!-- NUEVO: INPUT DE TAGS -->
+    <input type="text" id="notaTagsInput" placeholder="trabajo, ideas, urgente">
+    <p class="ayuda">Separa las etiquetas con comas</p>
+    
+    <button class="btn" onclick="nota.guardar()">Guardar</button>
+    <button class="btn" onclick="ui.cerrarModalNota()">Cancelar</button>
+  </div>
+</div>
+
+<script>
+/* =======================
+   MÓDULO: DATOS Y ESTADO
+======================= */
+const App = {
+  dbKey: 'misCuadernosColores_v5', // cambié la key para no pisar datos viejos
+  cuadernos: [],
+  cuadernoAbiertoId: null,
+  notaEditandoId: null,
+  cuadernoEditandoId: null,
+  colorSeleccionado: null,
+  paleta: [
+    { lomo: '#ffc2e0', lineas: '#ffd6e8' },
+    { lomo: '#c4b5fd', lineas: '#ddd6fe' },
+    { lomo: '#93c5fd', lineas: '#bfdbfe' },
+    { lomo: '#6ee7b7', lineas: '#a7f3d0' },
+    { lomo: '#fde047', lineas: '#fef08a' },
+    { lomo: '#fca5a5', lineas: '#fecaca' }
+  ],
+  
+  cargar() {
+    const data = localStorage.getItem(this.dbKey);
+    this.cuadernos = data ? JSON.parse(data) : [];
+  },
+  guardar() {
+    localStorage.setItem(this.dbKey, JSON.stringify(this.cuadernos));
+  }
+};
+
+/* =======================
+   MÓDULO: UI
+======================= */
+const ui = {
+  abrirModalNuevoCuaderno() {
+    App.cuadernoEditandoId = null;
+    document.getElementById('tituloModalCuaderno').textContent = "Nuevo Cuaderno";
+    document.getElementById('nombreInput').value = '';
+    document.getElementById('btnEliminarCuaderno').style.display = 'none';
+    this.renderSelectorColores();
+    document.getElementById('modalCuaderno').classList.add('activo');
+  },
+  
+  abrirModalEditarCuaderno(id) {
+    App.cuadernoEditandoId = id;
+    const c = App.cuadernos.find(x => x.id === id);
+    document.getElementById('tituloModalCuaderno').textContent = "Editar Cuaderno";
+    document.getElementById('nombreInput').value = c.nombre;
+    document.getElementById('btnEliminarCuaderno').style.display = 'block';
+    this.renderSelectorColores(c.color);
+    document.getElementById('modalCuaderno').classList.add('activo');
+  },
+
+  cerrarModalCuaderno() { document.getElementById('modalCuaderno').classList.remove('activo'); },
+
+  renderSelectorColores(colorActual) {
+    const cont = document.getElementById('selectorColores');
+    cont.innerHTML = '';
+    App.paleta.forEach((color, i) => {
+      const esSeleccionado = colorActual && color.lomo === colorActual.lomo;
+      if(esSeleccionado) App.colorSeleccionado = color;
+      if(!colorActual && i === 0) App.colorSeleccionado = color;
+      
+      cont.innerHTML += `<div class="color-opcion ${esSeleccionado || (!colorActual && i===0) ? 'seleccionado' : ''}" 
+        style="background:${color.lomo}" onclick="ui.seleccionarColor(${i}, this)"></div>`;
+    });
+  },
+
+  seleccionarColor(i, el) {
+    document.querySelectorAll('.color-opcion').forEach(c => c.classList.remove('seleccionado'));
+    el.classList.add('seleccionado');
+    App.colorSeleccionado = App.paleta[i];
+  },
+
+  cerrarModalNota() { document.getElementById('modalNota').classList.remove('activo'); }
+};
+
+/* =======================
+   MÓDULO: NAVEGACIÓN
+======================= */
+const nav = {
+  abrirCuaderno(id) {
+    App.cuadernoAbiertoId = id;
+    render.notas();
+    document.getElementById('pantallaEstanteria').classList.remove('activa');
+    document.getElementById('pantallaNotas').classList.add('activa');
+  },
+  volverAEstanteria() {
+    App.cuadernoAbiertoId = null;
+    render.cuadernos();
+    document.getElementById('pantallaNotas').classList.remove('activa');
+    document.getElementById('pantallaEstanteria').classList.add('activa');
+  }
+};
+
+/* =======================
+   MÓDULO: CUADERNO
+======================= */
+const cuaderno = {
+  guardar() {
+    const nombre = document.getElementById('nombreInput').value.trim() || 'Nuevo Cuaderno';
+    if(App.cuadernoEditandoId) {
+      const c = App.cuadernos.find(x => x.id === App.cuadernoEditandoId);
+      c.nombre = nombre;
+      c.color = App.colorSeleccionado;
+    } else {
+      App.cuadernos.push({ 
+        id: Date.now(), 
+        nombre, 
+        color: App.colorSeleccionado,
+        notas: [] 
+      });
+    }
+    App.guardar(); render.cuadernos(); ui.cerrarModalCuaderno();
+  },
+
+  eliminar() {
+    if(confirm("⚠️ ¿Seguro que quieres eliminar este cuaderno y todas sus notas?")) {
+      App.cuadernos = App.cuadernos.filter(c => c.id !== App.cuadernoEditandoId);
+      App.guardar(); render.cuadernos(); ui.cerrarModalCuaderno();
+    }
+  }
+};
+
+/* =======================
+   MÓDULO: NOTA - SOLO MODIFIQUÉ ESTE
+======================= */
+const nota = {
+  abrirModalNueva() {
+    App.notaEditandoId = null;
+    document.getElementById('tituloModalNota').textContent = "Nueva Nota";
+    document.getElementById('notaTituloInput').value = '';
+    document.getElementById('notaTextoInput').value = '';
+    document.getElementById('notaTagsInput').value = ''; // NUEVO
+    document.getElementById('modalNota').classList.add('activo');
+  },
+  
+  editar(id) {
+    App.notaEditandoId = id;
+    const c = App.cuadernos.find(x => x.id === App.cuadernoAbiertoId);
+    const n = c.notas.find(x => x.id === id);
+    document.getElementById('tituloModalNota').textContent = "Editar Nota";
+    document.getElementById('notaTituloInput').value = n.titulo;
+    document.getElementById('notaTextoInput').value = n.texto;
+    document.getElementById('notaTagsInput').value = n.tags ? n.tags.join(', ') : ''; // NUEVO
+    document.getElementById('modalNota').classList.add('activo');
+  },
+
+  guardar() {
+    const titulo = document.getElementById('notaTituloInput').value.trim() || 'Sin título';
+    const texto = document.getElementById('notaTextoInput').value.trim();
+    const tagsRaw = document.getElementById('notaTagsInput').value.trim(); // NUEVO
+    
+    if(texto === '') return alert("Escribe algo en la nota");
+    
+    // NUEVO: convertir "tag1, tag2" a ["tag1", "tag2"]
+    const tags = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(t => t) : [];
+
+    const c = App.cuadernos.find(x => x.id === App.cuadernoAbiertoId);
+    if(App.notaEditandoId) {
+      const n = c.notas.find(x => x.id === App.notaEditandoId);
+      n.titulo = titulo; n.texto = texto; n.tags = tags; // NUEVO
+    } else {
+      c.notas.push({ id: Date.now(), titulo, texto, tags }); // NUEVO
+    }
+    App.guardar(); render.notas(); ui.cerrarModalNota();
+  },
+
+  eliminar(id) {
+    if(confirm("¿Borrar esta nota?")) {
+      const c = App.cuadernos.find(x => x.id === App.cuadernoAbiertoId);
+      c.notas = c.notas.filter(n => n.id !== id);
+      App.guardar(); render.notas();
+    }
+  }
+};
+
+/* =======================
+   MÓDULO: RENDER - SOLO MODIFIQUÉ NOTAS
+======================= */
+const render = {
+  cuadernos() {
+    const lista = document.getElementById('listaCuadernos');
+    lista.innerHTML = '';
+    if(App.cuadernos.length === 0){
+      lista.innerHTML = '<p style="text-align:center; grid-column: 1/-1;">Creá tu primer cuaderno colorido 💖</p>';
+      return;
+    }
+    App.cuadernos.forEach(c => {
+      lista.innerHTML += `
+        <div class="cuaderno">
+          <div class="portada" style="--color-lomo: ${c.color.lomo}; --color-lineas: ${c.color.lineas}">
+            <div class="portada-info" onclick="nav.abrirCuaderno(${c.id})">
+              <div class="titulo">${c.nombre}</div>
+              <div class="fecha">${c.notas.length} notas</div>
+            </div>
+            <div class="portada-botones">
+              <button class="btn-portada" onclick="ui.abrirModalEditarCuaderno(${c.id})">Editar</button>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+  },
+
+  notas() {
+    const c = App.cuadernos.find(x => x.id === App.cuadernoAbiertoId);
+    document.getElementById('tituloCuadernoAbierto').textContent = c.nombre;
+    
+    const lista = document.getElementById('listaNotas');
+    lista.innerHTML = '';
+    if(c.notas.length === 0){
+      lista.innerHTML = '<p style="text-align:center;">No hay notas aún. Agrega la primera 💌</p>';
+      return;
+    }
+    c.notas.forEach(n => {
+      // NUEVO: renderizar tags
+      const tagsHTML = n.tags && n.tags.length > 0 
+        ? `<div class="tags-contenedor">${n.tags.map(t => `<span class="tag">#${t}</span>`).join('')}</div>` 
+        : '';
+      
+      lista.innerHTML += `
+        <div class="nota" style="--color-lomo: ${c.color.lomo}" onclick="nota.editar(${n.id})">
+          <button class="btn-nota-del" onclick="event.stopPropagation(); nota.eliminar(${n.id})">Borrar</button>
+          <div class="nota-titulo">${n.titulo}</div>
+          <div class="nota-texto">${n.texto}</div>
+          ${tagsHTML}
+        </div>
+      `;
+    });
+  }
+};
+
+/* INICIO */
+App.cargar();
+render.cuadernos();
+
+/* NUEVO: REGISTRAR SERVICE WORKER */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('SW registrado ✅', reg))
+      .catch(err => console.log('Error SW ❌', err));
+  });
+}
+
+</script>
+
+</body>
+</html>
