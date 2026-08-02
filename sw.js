@@ -1,5 +1,4 @@
-
-const CACHE_NAME = 'cuadernos-v2'; // <- CAMBIARLO a v3, v4... en cada deploy
+const CACHE_NAME = 'cuadernos-v3'; // <- CAMBIARLO a v4, v5... en cada deploy
 const urlsToCache = [
 './',
 './index.html',
