@@ -410,11 +410,26 @@ const render = {
 App.cargar();
 render.cuadernos();
 
-/* NUEVO: REGISTRAR SERVICE WORKER */
+/* NUEVO: REGISTRAR SERVICE WORKER + DETECTAR ACTUALIZACIONES */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
-      .then(reg => console.log('SW registrado ✅', reg))
+      .then(reg => {
+        console.log('SW registrado ✅', reg);
+
+        // NUEVO: Escuchar si hay una nueva versión
+        reg.onupdatefound = () => {
+          const newWorker = reg.installing;
+          newWorker.onstatechange = () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              // Hay update! Preguntamos
+              if (confirm('📦 Hay nueva versión de Mis Cuadernos. ¿Actualizar ahora?')) {
+                window.location.reload();
+              }
+            }
+          };
+        };
+      })
       .catch(err => console.log('Error SW ❌', err));
   });
 }
