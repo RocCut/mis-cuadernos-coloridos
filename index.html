@@ -151,8 +151,8 @@
     <div class="modal-botones">
       <button class="btn btn-peligro" id="btnEliminarCuaderno" style="display:none;" onclick="cuaderno.eliminar()">Eliminar Cuaderno</button>
       <div>
-        <button class="btn" onclick="cuaderno.guardar()">Guardar</button>
         <button class="btn" onclick="ui.cerrarModalCuaderno()">Cancelar</button>
+        <button class="btn" onclick="cuaderno.guardar()">Guardar</button>
       </div>
     </div>
   </div>
@@ -169,8 +169,8 @@
     <input type="text" id="notaTagsInput" placeholder="trabajo, ideas, urgente">
     <p class="ayuda">Separa las etiquetas con comas</p>
     
-    <button class="btn" onclick="nota.guardar()">Guardar</button>
     <button class="btn" onclick="ui.cerrarModalNota()">Cancelar</button>
+    <button class="btn" onclick="nota.guardar()">Guardar</button>
   </div>
 </div>
 
@@ -298,7 +298,7 @@ const cuaderno = {
 };
 
 /* =======================
-   MÓDULO: NOTA - SOLO MODIFIQUÉ ESTE
+   MÓDULO: NOTA 
 ======================= */
 const nota = {
   abrirModalNueva() {
@@ -306,7 +306,7 @@ const nota = {
     document.getElementById('tituloModalNota').textContent = "Nueva Nota";
     document.getElementById('notaTituloInput').value = '';
     document.getElementById('notaTextoInput').value = '';
-    document.getElementById('notaTagsInput').value = ''; // NUEVO
+    document.getElementById('notaTagsInput').value = ''; 
     document.getElementById('modalNota').classList.add('activo');
   },
   
@@ -317,14 +317,14 @@ const nota = {
     document.getElementById('tituloModalNota').textContent = "Editar Nota";
     document.getElementById('notaTituloInput').value = n.titulo;
     document.getElementById('notaTextoInput').value = n.texto;
-    document.getElementById('notaTagsInput').value = n.tags ? n.tags.join(', ') : ''; // NUEVO
+    document.getElementById('notaTagsInput').value = n.tags ? n.tags.join(', ') : ''; 
     document.getElementById('modalNota').classList.add('activo');
   },
 
   guardar() {
     const titulo = document.getElementById('notaTituloInput').value.trim() || 'Sin título';
     const texto = document.getElementById('notaTextoInput').value.trim();
-    const tagsRaw = document.getElementById('notaTagsInput').value.trim(); // NUEVO
+    const tagsRaw = document.getElementById('notaTagsInput').value.trim(); 
     
     if(texto === '') return alert("Escribe algo en la nota");
     
@@ -351,7 +351,7 @@ const nota = {
 };
 
 /* =======================
-   MÓDULO: RENDER - SOLO MODIFIQUÉ NOTAS
+   MÓDULO: RENDER 
 ======================= */
 const render = {
   cuadernos() {
